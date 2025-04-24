@@ -4,8 +4,8 @@ import { CartItem, Product, CupSize } from '../types';
 interface CartContextType {
   items: CartItem[];
   addToCart: (product: Product, quantity: number, size: CupSize) => void;
-  removeFromCart: (productId: number, size: CupSize) => void;
-  updateQuantity: (productId: number, quantity: number, size: CupSize) => void;
+  removeFromCart: (productId: string, size: CupSize) => void;
+  updateQuantity: (productId: string, quantity: number, size: CupSize) => void;
   clearCart: () => void;
   getCartTotal: () => number;
   getCartItemCount: () => number;
@@ -34,26 +34,37 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [items]);
 
   const addToCart = (product: Product, quantity: number, size: CupSize) => {
+    // Ensure product.id is always a string
+    const patchedProduct = {
+      ...product,
+      id: typeof product.id === 'number' ? String(product.id) : product.id,
+    };
+    // Accept valid UUIDs (36 characters, with hyphens)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patchedProduct.id);
+    if (!patchedProduct.id || !isUuid) {
+      console.warn('Blocked adding product with non-UUID id to cart:', patchedProduct.id);
+      return;
+    }
     setItems(prevItems => {
-      const existingItem = prevItems.find(item => item.product.id === product.id && item.size === size);
+      const existingItem = prevItems.find(item => item.product.id === patchedProduct.id && item.size === size);
       
       if (existingItem) {
         return prevItems.map(item => 
-          item.product.id === product.id && item.size === size
+          item.product.id === patchedProduct.id && item.size === size
             ? { ...item, quantity: item.quantity + quantity } 
             : item
         );
       } else {
-        return [...prevItems, { product, quantity, size }];
+        return [...prevItems, { product: patchedProduct, quantity, size }];
       }
     });
   };
 
-  const removeFromCart = (productId: number, size: CupSize) => {
+  const removeFromCart = (productId: string, size: CupSize) => {
     setItems(prevItems => prevItems.filter(item => !(item.product.id === productId && item.size === size)));
   };
 
-  const updateQuantity = (productId: number, quantity: number, size: CupSize) => {
+  const updateQuantity = (productId: string, quantity: number, size: CupSize) => {
     if (quantity <= 0) {
       removeFromCart(productId, size);
       return;

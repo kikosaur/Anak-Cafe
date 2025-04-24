@@ -95,7 +95,7 @@ const Navbar: React.FC = () => {
                 className="flex items-center text-gray-700 hover:text-primary-600"
               >
                 <User className="h-5 w-5 mr-1" />
-                <span>{user?.name.split(' ')[0]}</span>
+                <span>{user?.email?.split('@')[0]}</span>
               </Link>
             ) : (
               <Link 

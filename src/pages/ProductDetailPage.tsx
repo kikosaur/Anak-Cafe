@@ -1,50 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getProductById } from '../data/products';
 import { useCart } from '../context/CartContext';
 import { ArrowLeft, Minus, Plus, ShoppingCart } from 'lucide-react';
 import { motion } from 'framer-motion';
+import type { Product } from '../types';
 
 const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
-  
-  const product = getProductById(Number(id));
-  
-  if (!product) {
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) {
+      setError('Missing product ID.');
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    getProductById(id)
+      .then(data => {
+        if (!data) {
+          setError('Product not found.');
+        } else {
+          // Patch fields for compatibility with Product type
+          setProduct({
+            ...data,
+            image: data.image_url || '',
+            image_url: data.image_url ?? undefined,
+            inStock: typeof data.in_stock === 'boolean' ? data.in_stock : true,
+            description: data.description || '',
+          });
+        }
+      })
+      .catch(() => setError('Failed to fetch product.'))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="container-custom py-20 text-center">
+        <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+      </div>
+    );
+  }
+
+  if (error || !product) {
     return (
       <div className="container-custom py-20 text-center">
         <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
-        <p className="mb-6">Sorry, we couldn't find the product you're looking for.</p>
+        <p className="mb-6">{error || "Sorry, we couldn't find the product you're looking for."}</p>
         <Link to="/products" className="btn btn-primary">
           Back to Products
         </Link>
       </div>
     );
   }
-  
+
   const incrementQuantity = () => {
     setQuantity(prev => prev + 1);
   };
-  
+
   const decrementQuantity = () => {
     if (quantity > 1) {
       setQuantity(prev => prev - 1);
     }
   };
-  
+
   const handleAddToCart = () => {
-    addToCart(product, quantity);
+    addToCart(product, quantity, 'small'); // Default to small size
     // Show success notification or feedback
   };
-  
+
   const handleBuyNow = () => {
-    addToCart(product, quantity);
+    addToCart(product, quantity, 'small');
     navigate('/checkout');
   };
-  
+
   return (
     <div className="bg-white py-10">
       <div className="container-custom">

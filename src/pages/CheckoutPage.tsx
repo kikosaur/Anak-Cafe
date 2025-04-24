@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useCart } from '../context/CartContext';
@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import { CreditCard, Palette as Paypal } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PaymentMethod } from '../types';
+import { createOrder } from '../data/orders';
+import { createOrderItems } from '../data/order_items';
 
 interface CheckoutFormData {
   firstName: string;
@@ -31,28 +33,59 @@ const CheckoutPage: React.FC = () => {
   
   const { register, handleSubmit, formState: { errors } } = useForm<CheckoutFormData>({
     defaultValues: {
-      firstName: user?.name.split(' ')[0] || '',
-      lastName: user?.name.split(' ')[1] || '',
+      firstName: user?.user_metadata?.firstName || '',
+      lastName: user?.user_metadata?.lastName || '',
       email: user?.email || '',
       paymentMethod: 'credit_card'
     }
   });
   
-  if (items.length === 0) {
-    navigate('/cart');
-    return null;
-  }
+  useEffect(() => {
+    if (items.length === 0) {
+      navigate('/cart');
+    }
+  }, [items, navigate]);
   
-  const onSubmit = (data: CheckoutFormData) => {
-    console.log('Order submitted:', data);
-    
-    // In a real app, this would make an API call to process the order
-    
-    // Simulate successful order
-    setTimeout(() => {
+  const onSubmit = async (data: CheckoutFormData) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    // Debug: Print cart items before order creation
+    console.log('Cart items at checkout:', items);
+    // Debug: Check the user.id before order creation
+    console.log('Supabase Auth user.id for order:', user.id);
+    try {
+      // Only send fields that exist in the orders table
+      const orderPayload = {
+        user_id: user.id, // Should be a UUID string
+        total: getCartTotal(),
+        status: 'pending',
+        payment_method: data.paymentMethod,
+      };
+      const order = await createOrder(orderPayload);
+      if (!order) {
+        alert('Order failed. Please try again.');
+        return;
+      }
+      // 2. Create order_items for this order
+      const itemsPayload = items.map(item => ({
+        order_id: order.id,
+        product_id: item.product.id,
+        quantity: item.quantity,
+        price: item.product.price
+      }));
+      const orderItemsResult = await createOrderItems(itemsPayload);
+      if (!orderItemsResult) {
+        alert('Order items failed. Please contact support.');
+        return;
+      }
       clearCart();
       navigate('/dashboard', { state: { orderSuccess: true } });
-    }, 1500);
+    } catch (err) {
+      alert('Order failed. Please try again.');
+      console.error('Order error:', err);
+    }
   };
   
   return (

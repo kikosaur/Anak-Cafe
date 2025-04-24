@@ -3,40 +3,26 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Package, User, Clock, LogOut, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getOrdersWithItemsByUser } from '../data/orders';
 
 // Mock data for user orders
-const mockOrders = [
-  {
-    id: 101,
-    date: '2023-10-15',
-    total: 32.97,
-    status: 'delivered',
-    items: [
-      { name: 'Ethiopia Yirgacheffe', quantity: 1, price: 16.99 },
-      { name: 'Cold Brew Concentrate', quantity: 1, price: 12.99 },
-      { name: 'Shipping', quantity: 1, price: 2.99 }
-    ]
-  },
-  {
-    id: 102,
-    date: '2023-11-02',
-    total: 59.97,
-    status: 'processing',
-    items: [
-      { name: 'Signature Blend Coffee', quantity: 2, price: 14.99 },
-      { name: 'Ceramic Pour Over Set', quantity: 1, price: 42.99 },
-      { name: 'Shipping', quantity: 1, price: 0 }
-    ]
-  }
-];
-
 const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('orders');
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    setLoadingOrders(true);
+    getOrdersWithItemsByUser(user.id?.toString?.() ?? user.id)
+      .then(data => setOrders(data))
+      .finally(() => setLoadingOrders(false));
+  }, [user]);
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -152,41 +138,43 @@ const DashboardPage: React.FC = () => {
             {activeTab === 'orders' && (
               <div>
                 <h2 className="text-2xl font-bold font-serif mb-6">My Orders</h2>
-                
-                {mockOrders.length > 0 ? (
+                {loadingOrders ? (
+                  <div>Loading orders...</div>
+                ) : orders.length > 0 ? (
                   <div className="space-y-6">
-                    {mockOrders.map(order => (
+                    {orders.map(order => (
                       <div key={order.id} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex flex-wrap justify-between items-center mb-4">
                           <div>
                             <h3 className="font-bold">Order #{order.id}</h3>
                             <p className="text-sm text-gray-500">
-                              Placed on {new Date(order.date).toLocaleDateString()}
+                              Placed on {new Date(order.created_at).toLocaleDateString()}
                             </p>
                           </div>
                           <div className="flex flex-col items-end">
                             <span className="font-bold text-primary-700">
-                              ${order.total.toFixed(2)}
+                              ₱{order.total?.toFixed(2)}
                             </span>
                             <span className={`text-sm px-2 py-1 rounded-full ${
-                              order.status === 'delivered' 
-                                ? 'bg-success-100 text-success-800' 
-                                : 'bg-warning-100 text-warning-800'
+                              order.status === 'delivered'
+                                ? 'bg-success-100 text-success-800'
+                                : order.status === 'pending'
+                                ? 'bg-warning-100 text-warning-800'
+                                : 'bg-info-100 text-info-800'
                             }`}>
-                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                              {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
                             </span>
                           </div>
                         </div>
-                        
                         <div className="border-t border-gray-100 pt-4">
                           <h4 className="font-medium mb-2">Order Items</h4>
                           <div className="space-y-2">
-                            {order.items.map((item, index) => (
+                            {order.items?.map?.((item, index) => (
                               <div key={index} className="flex justify-between text-sm">
                                 <span>
-                                  {item.quantity} x {item.name}
+                                  {item.quantity} x {item.name} {item.size ? `(${item.size})` : ''}
                                 </span>
-                                <span>${(item.price * item.quantity).toFixed(2)}</span>
+                                <span>₱{(item.price * item.quantity).toFixed(2)}</span>
                               </div>
                             ))}
                           </div>
@@ -199,11 +187,8 @@ const DashboardPage: React.FC = () => {
                     <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium mb-2">No orders yet</h3>
                     <p className="text-gray-500 mb-6">
-                      When you place an order, it will appear here.
+                      You haven't placed any orders yet. Start shopping to see your orders here.
                     </p>
-                    <a href="/products" className="btn btn-primary">
-                      Browse Products
-                    </a>
                   </div>
                 )}
               </div>
@@ -284,7 +269,7 @@ const DashboardPage: React.FC = () => {
               <div>
                 <h2 className="text-2xl font-bold font-serif mb-6">Order History</h2>
                 
-                {mockOrders.length > 0 ? (
+                {orders.length > 0 ? (
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
@@ -303,25 +288,27 @@ const DashboardPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {mockOrders.map(order => (
+                      {orders.map(order => (
                         <tr key={order.id}>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="font-medium">{order.id}</span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {new Date(order.date).toLocaleDateString()}
+                            {new Date(order.created_at).toLocaleDateString()}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              order.status === 'delivered' 
-                                ? 'bg-success-100 text-success-800' 
-                                : 'bg-warning-100 text-warning-800'
+                              order.status === 'delivered'
+                                ? 'bg-success-100 text-success-800'
+                                : order.status === 'pending'
+                                ? 'bg-warning-100 text-warning-800'
+                                : 'bg-info-100 text-info-800'
                             }`}>
-                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                              {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap font-medium">
-                            ${order.total.toFixed(2)}
+                            ₱{order.total?.toFixed(2)}
                           </td>
                         </tr>
                       ))}

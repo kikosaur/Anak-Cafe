@@ -1,5 +1,5 @@
 export interface Product {
-  id: number;
+  id: string; // Changed from number to string for Supabase UUID
   name: string;
   category: string;
   price: number;
