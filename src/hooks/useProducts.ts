@@ -30,20 +30,35 @@ export const useProducts = () => {
   };
 
   const createProduct = async (product: ProductInsert) => {
+    // Sanitize fields for Supabase
+    const sanitizedProduct: ProductInsert = {
+      name: product.name,
+      category: product.category,
+      price: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
+      description: product.description === '' ? null : product.description,
+      image_url: product.image_url === '' ? null : product.image_url,
+      featured: product.featured ?? false,
+      in_stock: product.in_stock ?? true,
+    };
     try {
       const { data, error } = await supabase
         .from('products')
-        .insert(product)
+        .insert([sanitizedProduct])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase insert error:', error, 'Product:', sanitizedProduct);
+        toast.error(`Failed to create product: ${error.message || error}`);
+        setError(error.message || 'Unknown error');
+        throw error;
+      }
       setProducts(prev => [data, ...prev]);
       toast.success('Product created successfully');
       return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      toast.error('Failed to create product');
+      toast.error(`Failed to create product: ${err instanceof Error ? err.message : err}`);
       throw err;
     }
   };

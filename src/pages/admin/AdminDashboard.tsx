@@ -51,7 +51,7 @@ const stats = [
   },
   {
     title: 'Revenue',
-    value: '$12,345',
+    value: '₱12,345',
     icon: TrendingUp,
     change: '-5%',
     trend: 'down',

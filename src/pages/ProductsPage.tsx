@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { products, getProductsByCategory, searchProducts } from '../data/products';
+import { getAllProducts, getProductsByCategory, searchProducts } from '../data/products';
 import { Search, Filter } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -12,42 +12,52 @@ const ProductsPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(categoryParam || 'all');
-  const [filteredProducts, setFilteredProducts] = useState(products);
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Update filters when URL parameters change
+  const navigate = useNavigate();
+
   useEffect(() => {
     if (categoryParam) {
       setSelectedCategory(categoryParam);
     }
   }, [categoryParam]);
 
-  // Apply filters
   useEffect(() => {
-    let result = products;
-    
-    // Apply category filter
-    if (selectedCategory !== 'all') {
-      result = getProductsByCategory(selectedCategory);
-    }
-    
-    // Apply search filter
-    if (searchQuery.trim() !== '') {
-      result = searchProducts(searchQuery);
-      
-      // Further filter by category if needed
-      if (selectedCategory !== 'all') {
-        result = result.filter(product => product.category === selectedCategory);
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await getAllProducts();
+        if (mounted) {
+          setAllProducts(Array.isArray(data) ? data : []);
+          setFilteredProducts(Array.isArray(data) ? data : []);
+        }
+      } finally {
+        if (mounted) setLoading(false);
       }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    let result = allProducts;
+    if (selectedCategory !== 'all') {
+      result = result.filter(product => product.category === selectedCategory);
     }
-    
+    if (searchQuery.trim() !== '') {
+      result = result.filter(product =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
     setFilteredProducts(result);
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, allProducts]);
 
   const categories = [
     { value: 'all', label: 'All Products' },
-    { value: 'beans', label: 'Coffee Beans' },
-    { value: 'equipment', label: 'Equipment' },
-    { value: 'ready-to-drink', label: 'Ready to Drink' },
+    { value: 'coffee', label: 'Coffee' },
+    { value: 'specialty-drinks', label: 'Specialty Drinks' },
   ];
 
   const containerVariants = {
@@ -108,24 +118,26 @@ const ProductsPage: React.FC = () => {
         </div>
 
         {/* Products Grid */}
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map(product => (
+        {loading ? (
+          <div className="text-center py-12">Loading products...</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">No products found.</div>
+        ) : (
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {filteredProducts.map(product => (
               <motion.div key={product.id} variants={itemVariants}>
-                <ProductCard product={product} />
+                <div onClick={() => navigate(`/product/${product.id}`)} style={{ cursor: 'pointer' }}>
+                  <ProductCard product={product} />
+                </div>
               </motion.div>
-            ))
-          ) : (
-            <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-10">
-              <p className="text-gray-500 text-lg">No products found. Try a different search or filter.</p>
-            </div>
-          )}
-        </motion.div>
+            ))}
+          </motion.div>
+        )}
       </div>
     </div>
   );

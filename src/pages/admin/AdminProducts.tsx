@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const AdminProducts = () => {
-  const { products, loading, createProduct, updateProduct, deleteProduct } = useProducts();
+  const { products, loading, createProduct, updateProduct, deleteProduct, refreshProducts } = useProducts();
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -18,23 +18,26 @@ const AdminProducts = () => {
     featured: false,
     in_stock: true
   });
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       const productData = {
         ...formData,
-        price: parseFloat(formData.price)
+        price: parseFloat(formData.price),
       };
 
       if (editingProduct) {
         await updateProduct(editingProduct, productData);
         setEditingProduct(null);
+        toast.success('Product updated!');
       } else {
         await createProduct(productData);
         setIsAddingProduct(false);
+        toast.success('Product added!');
       }
-      
       setFormData({
         name: '',
         category: '',
@@ -44,8 +47,12 @@ const AdminProducts = () => {
         featured: false,
         in_stock: true
       });
+      await refreshProducts();
     } catch (error) {
+      toast.error('Error saving product');
       console.error('Error saving product:', error);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -53,7 +60,10 @@ const AdminProducts = () => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
         await deleteProduct(id);
+        await refreshProducts();
+        toast.success('Product deleted!');
       } catch (error) {
+        toast.error('Error deleting product');
         console.error('Error deleting product:', error);
       }
     }
@@ -110,9 +120,8 @@ const AdminProducts = () => {
                   required
                 >
                   <option value="">Select category</option>
-                  <option value="beans">Coffee Beans</option>
-                  <option value="equipment">Equipment</option>
-                  <option value="ready-to-drink">Ready to Drink</option>
+                  <option value="coffee">Coffee</option>
+                  <option value="specialty-drinks">Specialty Drinks</option>
                 </select>
               </div>
               <div>
@@ -172,16 +181,26 @@ const AdminProducts = () => {
               </label>
             </div>
             <div className="flex gap-2">
-              <button type="submit" className="btn btn-primary">
-                {editingProduct ? 'Update Product' : 'Add Product'}
+              <button type="submit" className="btn btn-primary" disabled={submitting}>
+                {submitting ? (editingProduct ? 'Updating...' : 'Adding...') : (editingProduct ? 'Update Product' : 'Add Product')}
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setIsAddingProduct(false);
                   setEditingProduct(null);
+                  setFormData({
+                    name: '',
+                    category: '',
+                    price: '',
+                    description: '',
+                    image_url: '',
+                    featured: false,
+                    in_stock: true
+                  });
                 }}
                 className="btn btn-outline"
+                disabled={submitting}
               >
                 Cancel
               </button>

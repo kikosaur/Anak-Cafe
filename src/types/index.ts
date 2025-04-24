@@ -5,13 +5,17 @@ export interface Product {
   price: number;
   description: string;
   image: string;
+  image_url?: string;
   featured: boolean;
   inStock: boolean;
 }
 
+export type CupSize = 'small' | 'medium' | 'large';
+
 export interface CartItem {
   product: Product;
   quantity: number;
+  size: CupSize;
 }
 
 export interface User {

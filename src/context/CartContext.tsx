@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { CartItem, Product } from '../types';
+import { CartItem, Product, CupSize } from '../types';
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, quantity: number) => void;
-  removeFromCart: (productId: number) => void;
-  updateQuantity: (productId: number, quantity: number) => void;
+  addToCart: (product: Product, quantity: number, size: CupSize) => void;
+  removeFromCart: (productId: number, size: CupSize) => void;
+  updateQuantity: (productId: number, quantity: number, size: CupSize) => void;
   clearCart: () => void;
   getCartTotal: () => number;
   getCartItemCount: () => number;
@@ -33,35 +33,35 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('cart', JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (product: Product, quantity: number) => {
+  const addToCart = (product: Product, quantity: number, size: CupSize) => {
     setItems(prevItems => {
-      const existingItem = prevItems.find(item => item.product.id === product.id);
+      const existingItem = prevItems.find(item => item.product.id === product.id && item.size === size);
       
       if (existingItem) {
         return prevItems.map(item => 
-          item.product.id === product.id 
+          item.product.id === product.id && item.size === size
             ? { ...item, quantity: item.quantity + quantity } 
             : item
         );
       } else {
-        return [...prevItems, { product, quantity }];
+        return [...prevItems, { product, quantity, size }];
       }
     });
   };
 
-  const removeFromCart = (productId: number) => {
-    setItems(prevItems => prevItems.filter(item => item.product.id !== productId));
+  const removeFromCart = (productId: number, size: CupSize) => {
+    setItems(prevItems => prevItems.filter(item => !(item.product.id === productId && item.size === size)));
   };
 
-  const updateQuantity = (productId: number, quantity: number) => {
+  const updateQuantity = (productId: number, quantity: number, size: CupSize) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(productId, size);
       return;
     }
     
     setItems(prevItems => 
       prevItems.map(item => 
-        item.product.id === productId 
+        item.product.id === productId && item.size === size
           ? { ...item, quantity } 
           : item
       )

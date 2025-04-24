@@ -31,8 +31,8 @@ const AdminSales = () => {
       {/* Sales Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         {[
-          { title: 'Total Sales', value: '$12,345', change: '+12%' },
-          { title: 'Average Order Value', value: '$85.50', change: '+5%' },
+          { title: 'Total Sales', value: '₱12,345', change: '+12%' },
+          { title: 'Average Order Value', value: '₱85.50', change: '+5%' },
           { title: 'Orders', value: '145', change: '+8%' },
           { title: 'Customers', value: '98', change: '+15%' },
         ].map((stat, index) => (
@@ -113,7 +113,7 @@ const AdminSales = () => {
                     Ethiopia Yirgacheffe
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    $49.99
+                    ₱49.99
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     2024-03-15

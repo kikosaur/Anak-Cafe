@@ -16,7 +16,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(product, 1);
+    addToCart(product, 1, 'small'); // default to small size
   };
 
   return (
@@ -28,7 +28,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       <Link to={`/products/${product.id}`}>
         <div className="relative">
           <img 
-            src={product.image} 
+            src={product.image_url} 
             alt={product.name} 
             className="w-full h-60 object-cover"
           />

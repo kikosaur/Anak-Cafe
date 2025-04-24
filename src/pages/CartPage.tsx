@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { formatCurrency } from '../utils/currency';
 import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -74,7 +75,7 @@ const CartPage: React.FC = () => {
                   {/* Price and Remove */}
                   <div className="text-right">
                     <div className="font-bold text-lg text-primary-700">
-                      ${(item.product.price * item.quantity).toFixed(2)}
+                      {formatCurrency(item.product.price * item.quantity)}
                     </div>
                     <button 
                       onClick={() => removeFromCart(item.product.id)}
@@ -102,7 +103,7 @@ const CartPage: React.FC = () => {
               <div className="space-y-3 border-b border-gray-200 pb-4 mb-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">${getCartTotal().toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(getCartTotal())}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
@@ -113,7 +114,7 @@ const CartPage: React.FC = () => {
               <div className="flex justify-between mb-6">
                 <span className="text-lg font-bold">Total</span>
                 <span className="text-lg font-bold text-primary-700">
-                  ${getCartTotal().toFixed(2)}
+                  {formatCurrency(getCartTotal())}
                 </span>
               </div>
               
