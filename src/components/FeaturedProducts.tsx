@@ -1,11 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ProductCard from './ProductCard';
 import { getFeaturedProducts } from '../data/products';
 import { motion } from 'framer-motion';
 
 const FeaturedProducts: React.FC = () => {
-  const featuredProducts = getFeaturedProducts();
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await getFeaturedProducts();
+        if (mounted) setFeaturedProducts(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setFeaturedProducts([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  if (loading) return <div className="text-center py-12">Loading featured products...</div>;
 
   return (
     <section className="py-16 bg-primary-50">

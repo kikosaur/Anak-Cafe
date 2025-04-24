@@ -3,6 +3,46 @@ import { Database } from '../types/database';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
+// Sample static products array for fallback or static usage
+export const products = [
+  {
+    id: 1,
+    name: 'Espresso',
+    category: 'Coffee',
+    price: 3.5,
+    description: 'Classic espresso shot.',
+    image_url: '/images/espresso.jpg',
+    created_at: '2025-04-24T00:00:00Z',
+  },
+  {
+    id: 2,
+    name: 'Cappuccino',
+    category: 'Coffee',
+    price: 4.0,
+    description: 'Espresso with steamed milk and foam.',
+    image_url: '/images/cappuccino.jpg',
+    created_at: '2025-04-24T00:00:00Z',
+  },
+  {
+    id: 3,
+    name: 'Iced Latte',
+    category: 'Cold Drinks',
+    price: 4.5,
+    description: 'Espresso with cold milk and ice.',
+    image_url: '/images/iced-latte.jpg',
+    created_at: '2025-04-24T00:00:00Z',
+  },
+];
+
+// Example fallback implementations for getProductsByCategory and searchProducts
+export function getProductsByCategory(category: string) {
+  return products.filter(p => p.category === category);
+}
+
+export function searchProducts(query: string) {
+  return products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
+}
+
 // Get all products
 export const getAllProducts = async (): Promise<Product[]> => {
   const { data, error } = await supabase
@@ -94,7 +134,7 @@ export const getFeaturedProducts = async (): Promise<Product[]> => {
   return data || [];
 };
 
-export const getProductsByCategory = async (category: string): Promise<Product[]> => {
+export const getProductsByCategoryAsync = async (category: string): Promise<Product[]> => {
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -108,7 +148,7 @@ export const getProductsByCategory = async (category: string): Promise<Product[]
   return data || [];
 };
 
-export const searchProducts = async (query: string): Promise<Product[]> => {
+export const searchProductsAsync = async (query: string): Promise<Product[]> => {
   const lowercaseQuery = query.toLowerCase();
   const { data, error } = await supabase
     .from('products')
